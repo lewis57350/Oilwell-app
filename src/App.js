@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   HashRouter as Router,
   Routes,
@@ -10,25 +10,19 @@ import { QRCodeCanvas } from "qrcode.react";
 import { motion } from "framer-motion";
 
 // -----------------------------
-// Helpers & Small Components
+// QR helper (works for dev + prod)
 // -----------------------------
-
-// QR value helper – now includes full origin so it works on phone cameras
 function safeQrValue(id) {
-  try {
-    // Use window.location.origin so it works both in dev and prod
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : "";
-
-    return `${origin}/#/well/${id}`;
-  } catch {
-    // Fallback if window is undefined (like in tests)
-    return `well-${id}`;
-  }
+  const base =
+    process.env.NODE_ENV === "production"
+      ? "https://lewis57350.github.io/oilwell-app"
+      : window.location.origin;
+  return `${base}/#/well/${id}`;
 }
 
-
-// Inline editable text field with Save/Cancel
+// -----------------------------
+// Inline Edit Component
+// -----------------------------
 function InlineEdit({ label, value, onSave, placeholder = "" }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? "");
@@ -91,7 +85,9 @@ function InlineEdit({ label, value, onSave, placeholder = "" }) {
   );
 }
 
-// Simple pumpjack icon (fixed, valid SVG)
+// -----------------------------
+// Pumpjack Icon
+// -----------------------------
 function PumpjackIcon({ className }) {
   return (
     <svg
@@ -108,7 +104,7 @@ function PumpjackIcon({ className }) {
 }
 
 // -----------------------------
-// Home (Well List) with Add Well
+// Home Page
 // -----------------------------
 function Home({ wells, addWell }) {
   const [formOpen, setFormOpen] = useState(false);
@@ -196,13 +192,12 @@ function Home({ wells, addWell }) {
 }
 
 // -----------------------------
-// Well Detail (now defined!)
+// Well Detail Page
 // -----------------------------
 function WellDetail({ wells, records, addRecord, updateWell, updateRecord }) {
   const { id } = useParams();
   const wellId = Number(id);
   const well = wells.find((w) => w.id === wellId);
-
   const relatedRecords = records.filter((r) => r.wellId === wellId);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -236,47 +231,16 @@ function WellDetail({ wells, records, addRecord, updateWell, updateRecord }) {
         <PumpjackIcon className="w-8 h-8 text-cyan-400" /> Well Details
       </h1>
 
-      {/* Well info card */}
+      {/* Well Info */}
       <div className="rounded-xl bg-gray-900 border border-gray-700 p-6 shadow-lg">
         <div className="grid md:grid-cols-2 gap-4">
-          <InlineEdit
-            label="Name"
-            value={well.name}
-            onSave={(val) => updateWell(wellId, { name: val })}
-          />
-          <InlineEdit
-            label="Location"
-            value={well.location}
-            onSave={(val) => updateWell(wellId, { location: val })}
-          />
-          <InlineEdit
-            label="Rod Size/Count"
-            value={well.rodInfo || ""}
-            onSave={(val) => updateWell(wellId, { rodInfo: val })}
-            placeholder="e.g. 7/8 in · 120"
-          />
-          <InlineEdit
-            label="Tubing Size/Count"
-            value={well.tubingInfo || ""}
-            onSave={(val) => updateWell(wellId, { tubingInfo: val })}
-            placeholder="e.g. 2-3/8 in · 200"
-          />
-          <InlineEdit
-            label="Pump Type/Size"
-            value={well.pumpInfo || ""}
-            onSave={(val) => updateWell(wellId, { pumpInfo: val })}
-            placeholder="e.g. RHAC · 1.25 in"
-          />
-          <InlineEdit
-            label="Polish Rod Liner Size"
-            value={well.polishRodLiner || ""}
-            onSave={(val) => updateWell(wellId, { polishRodLiner: val })}
-          />
-          <InlineEdit
-            label="Packing Size/Style"
-            value={well.packing || ""}
-            onSave={(val) => updateWell(wellId, { packing: val })}
-          />
+          <InlineEdit label="Name" value={well.name} onSave={(val) => updateWell(wellId, { name: val })} />
+          <InlineEdit label="Location" value={well.location} onSave={(val) => updateWell(wellId, { location: val })} />
+          <InlineEdit label="Rod Size/Count" value={well.rodInfo || ""} onSave={(val) => updateWell(wellId, { rodInfo: val })} />
+          <InlineEdit label="Tubing Size/Count" value={well.tubingInfo || ""} onSave={(val) => updateWell(wellId, { tubingInfo: val })} />
+          <InlineEdit label="Pump Type/Size" value={well.pumpInfo || ""} onSave={(val) => updateWell(wellId, { pumpInfo: val })} />
+          <InlineEdit label="Polish Rod Liner Size" value={well.polishRodLiner || ""} onSave={(val) => updateWell(wellId, { polishRodLiner: val })} />
+          <InlineEdit label="Packing Size/Style" value={well.packing || ""} onSave={(val) => updateWell(wellId, { packing: val })} />
         </div>
 
         <div className="mt-6 flex justify-center">
@@ -289,53 +253,25 @@ function WellDetail({ wells, records, addRecord, updateWell, updateRecord }) {
       {relatedRecords.filter((r) => r.type === "service").length === 0 && (
         <p className="text-gray-400 mt-2">No service records yet.</p>
       )}
-      {relatedRecords
-        .filter((r) => r.type === "service")
-        .map((record) => (
-          <div key={record.id} className="my-2 p-4 rounded-xl bg-gray-900 border border-lime-500">
-            <InlineEdit
-              label="Date"
-              value={record.date}
-              onSave={(val) => updateRecord(record.id, { date: val })}
-            />
-            <InlineEdit
-              label="Operator/Pumper"
-              value={record.operator}
-              onSave={(val) => updateRecord(record.id, { operator: val })}
-            />
-            <InlineEdit
-              label="Notes"
-              value={record.notes}
-              onSave={(val) => updateRecord(record.id, { notes: val })}
-            />
-          </div>
-        ))}
+      {relatedRecords.filter((r) => r.type === "service").map((record) => (
+        <div key={record.id} className="my-2 p-4 rounded-xl bg-gray-900 border border-lime-500">
+          <InlineEdit label="Date" value={record.date} onSave={(val) => updateRecord(record.id, { date: val })} />
+          <InlineEdit label="Operator/Pumper" value={record.operator} onSave={(val) => updateRecord(record.id, { operator: val })} />
+          <InlineEdit label="Notes" value={record.notes} onSave={(val) => updateRecord(record.id, { notes: val })} />
+        </div>
+      ))}
 
       <h2 className="text-2xl font-semibold mt-8 text-orange-400">⚙️ Maintenance Records</h2>
       {relatedRecords.filter((r) => r.type === "maintenance").length === 0 && (
         <p className="text-gray-400 mt-2">No maintenance records yet.</p>
       )}
-      {relatedRecords
-        .filter((r) => r.type === "maintenance")
-        .map((record) => (
-          <div key={record.id} className="my-2 p-4 rounded-xl bg-gray-900 border border-orange-500">
-            <InlineEdit
-              label="Date"
-              value={record.date}
-              onSave={(val) => updateRecord(record.id, { date: val })}
-            />
-            <InlineEdit
-              label="Operator/Pumper"
-              value={record.operator}
-              onSave={(val) => updateRecord(record.id, { operator: val })}
-            />
-            <InlineEdit
-              label="Notes"
-              value={record.notes}
-              onSave={(val) => updateRecord(record.id, { notes: val })}
-            />
-          </div>
-        ))}
+      {relatedRecords.filter((r) => r.type === "maintenance").map((record) => (
+        <div key={record.id} className="my-2 p-4 rounded-xl bg-gray-900 border border-orange-500">
+          <InlineEdit label="Date" value={record.date} onSave={(val) => updateRecord(record.id, { date: val })} />
+          <InlineEdit label="Operator/Pumper" value={record.operator} onSave={(val) => updateRecord(record.id, { operator: val })} />
+          <InlineEdit label="Notes" value={record.notes} onSave={(val) => updateRecord(record.id, { notes: val })} />
+        </div>
+      ))}
 
       {/* Add Record Form */}
       <div className="mt-6">
@@ -349,46 +285,16 @@ function WellDetail({ wells, records, addRecord, updateWell, updateRecord }) {
         ) : (
           <div className="p-4 rounded-xl bg-gray-900 border border-cyan-400 shadow-lg">
             <h3 className="text-lg font-bold mb-2">Add Record</h3>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="mb-2 w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
-            >
+            <select value={type} onChange={(e) => setType(e.target.value)} className="mb-2 w-full p-2 rounded bg-gray-800 text-white border border-gray-600">
               <option value="service">Service Record</option>
               <option value="maintenance">Maintenance Record</option>
             </select>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="mb-2 w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
-            />
-            <input
-              type="text"
-              placeholder="Operator/Pumper"
-              value={operator}
-              onChange={(e) => setOperator(e.target.value)}
-              className="mb-2 w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
-            />
-            <textarea
-              placeholder="Notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="mb-2 w-full p-2 rounded bg-gray-800 text-white border border-gray-600"
-            />
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mb-2 w-full p-2 rounded bg-gray-800 text-white border border-gray-600" />
+            <input type="text" placeholder="Operator/Pumper" value={operator} onChange={(e) => setOperator(e.target.value)} className="mb-2 w-full p-2 rounded bg-gray-800 text-white border border-gray-600" />
+            <textarea placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="mb-2 w-full p-2 rounded bg-gray-800 text-white border border-gray-600" />
             <div className="flex gap-2">
-              <button
-                onClick={handleAdd}
-                className="flex-1 px-4 py-2 bg-lime-500 hover:bg-lime-400 text-black font-bold rounded-xl"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setFormOpen(false)}
-                className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-xl"
-              >
-                Cancel
-              </button>
+              <button onClick={handleAdd} className="flex-1 px-4 py-2 bg-lime-500 hover:bg-lime-400 text-black font-bold rounded-xl">Save</button>
+              <button onClick={() => setFormOpen(false)} className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-xl">Cancel</button>
             </div>
           </div>
         )}
@@ -405,17 +311,43 @@ function WellDetail({ wells, records, addRecord, updateWell, updateRecord }) {
 // App Root
 // -----------------------------
 export default function OilWellApp() {
-  const [wells, setWells] = useState([
-    { id: 1, name: "Well A", location: "Texas" },
-    { id: 2, name: "Well B", location: "North Dakota" },
-  ]);
+  const [wells, setWells] = useState([]);
+  const [records, setRecords] = useState([]);
 
-  const [records, setRecords] = useState([
-    { id: 1, wellId: 1, type: "service", date: "2025-09-05", operator: "John Doe", notes: "Routine check" },
-    { id: 2, wellId: 2, type: "maintenance", date: "2025-09-06", operator: "Jane Smith", notes: "Changed belts" },
-  ]);
+  // Load saved data on startup
+  useEffect(() => {
+    const savedWells = JSON.parse(localStorage.getItem("wells") || "null");
+    const savedRecords = JSON.parse(localStorage.getItem("records") || "null");
 
-  // CRUD helpers passed to pages
+    if (savedWells) {
+      setWells(savedWells);
+    } else {
+      setWells([
+        { id: 1, name: "Well A", location: "Texas" },
+        { id: 2, name: "Well B", location: "North Dakota" },
+      ]);
+    }
+
+    if (savedRecords) {
+      setRecords(savedRecords);
+    } else {
+      setRecords([
+        { id: 1, wellId: 1, type: "service", date: "2025-09-05", operator: "John Doe", notes: "Routine check" },
+        { id: 2, wellId: 2, type: "maintenance", date: "2025-09-06", operator: "Jane Smith", notes: "Changed belts" },
+      ]);
+    }
+  }, []);
+
+  // Save to localStorage whenever wells or records change
+  useEffect(() => {
+    localStorage.setItem("wells", JSON.stringify(wells));
+  }, [wells]);
+
+  useEffect(() => {
+    localStorage.setItem("records", JSON.stringify(records));
+  }, [records]);
+
+  // CRUD functions
   const addWell = (well) => setWells((prev) => [...prev, well]);
   const updateWell = (id, updates) =>
     setWells((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } : w)));
@@ -423,11 +355,6 @@ export default function OilWellApp() {
   const addRecord = (record) => setRecords((prev) => [...prev, record]);
   const updateRecord = (id, updates) =>
     setRecords((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
-
-  // Dev-only sanity checks (lightweight "tests")
-  if (process.env.NODE_ENV !== "production") {
-    console.assert(safeQrValue(5).includes("#/well/5"), "safeQrValue should include #/well/{id}");
-  }
 
   return (
     <Router>
