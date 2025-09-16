@@ -10,14 +10,15 @@ import { QRCodeCanvas } from "qrcode.react";
 import { motion } from "framer-motion";
 
 // -----------------------------
-// QR helper (works for dev + prod)
-// -----------------------------
+// QR helper - auto-detect dev vs prod
 function safeQrValue(id) {
-  const base =
-    process.env.NODE_ENV === "production"
-      ? "https://lewis57350.github.io/oilwell-app"
-      : window.location.origin;
-  return `${base}/#/well/${id}`;
+  if (process.env.NODE_ENV === "production") {
+    // Use your GitHub Pages URL in production
+    return `https://lewis57350.github.io/Oilwell-app/#/well/${id}`;
+  } else {
+    // Use localhost while developing
+    return `http://localhost:3000/#/well/${id}`;
+  }
 }
 
 // -----------------------------
