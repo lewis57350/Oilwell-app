@@ -6,8 +6,8 @@ export default function InlineEdit({ label, value, onSave, canEdit, placeholder 
 
   if (!canEdit) {
     return (
-      <div className="text-gray-800">
-        <span className="font-semibold text-gray-500">{label}: </span>
+      <div className="text-gray-200">
+        <span className="font-semibold text-gray-400">{label}: </span>
         {value || "—"}
       </div>
     );
@@ -22,7 +22,7 @@ export default function InlineEdit({ label, value, onSave, canEdit, placeholder 
     return (
       <div className="flex items-center gap-2">
         <input
-          className="border px-3 py-2 rounded bg-white text-gray-900 border-gray-300 w-full"
+          className="border px-3 py-2 rounded bg-gray-800 text-white border-gray-600 w-full"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={placeholder}
@@ -46,7 +46,7 @@ export default function InlineEdit({ label, value, onSave, canEdit, placeholder 
             setDraft(value ?? "");
             setEditing(false);
           }}
-          className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded"
+          className="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded"
         >
           Cancel
         </button>
@@ -56,13 +56,13 @@ export default function InlineEdit({ label, value, onSave, canEdit, placeholder 
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-gray-800">
-        <span className="font-semibold text-gray-500">{label}: </span>
+      <span className="text-gray-200">
+        <span className="font-semibold text-gray-400">{label}: </span>
         {value || "—"}
       </span>
       <button
         onClick={() => setEditing(true)}
-        className="text-cyan-700 hover:text-cyan-600"
+        className="text-cyan-400 hover:text-cyan-300"
         title="Edit"
       >
         ✏️
